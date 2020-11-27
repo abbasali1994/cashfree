@@ -1,0 +1,277 @@
+<html>
+
+<head>
+  <title>PayForm</title>
+  <script src="https://www.cashfree.com/assets/cashfree.sdk.v1.2.js" type="text/javascript"></script>
+  <!-- Latest compiled and minified CSS -->
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css"
+    integrity="sha384-HSMxcRTRxnN+Bdg0JdbxYKrThecOKuH5zCYotlSAcp1+c8xmyTe9GYg1l9a69psu" crossorigin="anonymous">
+  <!-- Optional theme -->
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap-theme.min.css"
+    integrity="sha384-6pzBo3FDv/PJ8r2KRkGHifhEocL+1X2rVCTTkUfGk7/0pbek5mMa1upzvWbrUbOZ" crossorigin="anonymous">
+  <!-- Latest compiled and minified JavaScript -->
+  <script src="https://stackpath.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"
+    integrity="sha384-aJ21OjlMXNL5UyIl/XNwTMqvzeRMZH2w8c5cRVpzpU8Y5bApTppSuUkhZXN0VxHd"
+    crossorigin="anonymous"></script>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/3.1.9-1/crypto-js.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/3.1.9-1/hmac-sha256.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/3.1.9-1/enc-base64.min.js"></script>
+</head>
+
+<body class="container">
+  <script type="text/javascript">
+    var payBank = null;
+    var payWallet = null;
+    var payUpi = null;
+    var SECRET_KEY = "9ebdf33c5aabc748a3750b0879ec9efe53254e95";
+    var config = {};
+    config.layout = {};
+    config.checkout = "transparent";
+    config.mode = 'TEST';
+    var response = CashFree.init(config);
+
+    if (response.status != "OK") {
+      console.log(response)
+    }
+    var data = {};
+    function generatePaymentToken() {
+      data.appId = '20676c22aaeaaa285cb03a657602';
+      data.orderId = new Date().getTime();
+      data.orderAmount = 100;
+      data.customerName = "John Doe";
+      data.customerPhone = "9900012345";
+      data.customerEmail = "jdoe@gmail.com";
+      data.returnUrl = "http://localhost:8081/finish";
+      data.orderNote = "Extra Info";
+      data.pc = "";
+      data.orderCurrency = "INR";
+      var tokenData = "appId=" + data.appId + "&orderId=" + data.orderId + "&orderAmount=" + data.orderAmount + "&customerEmail=" + data.customerEmail + "&customerPhone=" + data.customerPhone + "&orderCurrency=" + data.orderCurrency;
+      var hash = CryptoJS.HmacSHA256(tokenData, SECRET_KEY);
+      data.paymentToken = hash.toString(CryptoJS.enc.Base64);
+      return data;
+    }
+
+
+    var postPaymentCallback = function (event) {
+      // Callback method that handles Payment 
+      if (event.name == "PAYMENT_RESPONSE" && event.response.txStatus == "SUCCESS") {
+        alert("Payment Successful")
+      }
+      else if (event.name == "PAYMENT_RESPONSE" && event.response.txStatus == "CANCELLED") {
+        // Handle Cancelled
+        alert("Payment Cancelled")
+      }
+      else if (event.name == "PAYMENT_RESPONSE" && event.response.txStatus == "FAILED") {
+        // Handle Failed
+        alert("Payment Failed")
+      }
+      else if (event.name == "VALIDATION_ERROR") {
+        // Incorrect inputs
+        alert("VALIDATION_ERROR")
+      }
+    };
+
+    var pc = function () {
+      // CashFree.initPopup(); This will not work because browsers block popup requests being initiated from a callback
+      data.paymentOption = "card";
+      data.card = {};
+      data.card.number = document.getElementById("card-num").value;
+      data.card.expiryMonth = document.getElementById("card-mm").value;
+      data.card.expiryYear = document.getElementById("card-yyyy").value;
+      data.card.holder = document.getElementById("card-name").value;
+      data.card.cvv = document.getElementById("card-cvv").value;
+      CashFree.paySeamless(data, postPaymentCallback);
+      return false;
+    }
+
+    // PayCard shows how to implement it if there is a callback involved in your payment click.
+    payCardPopup = function () {
+      CashFree.initPopup(); // This is required for the popup to work even in case of callback.
+      $.ajax({
+        url: "https://reqres.in/api/users?page=2", // This is an open endpoint.
+        type: "GET",
+        success: function (response) {
+          pc();
+        }
+      });
+    };
+
+    function payCard() {
+      data = generatePaymentToken()
+      var value = document.getElementById("Popup").checked
+      if (value) {
+        payCardPopup()
+        return;
+      }
+      data.paymentOption = "card";
+      data.card = {};
+      data.card.number = document.getElementById("card-num").value;
+      data.card.expiryMonth = document.getElementById("card-mm").value;
+      data.card.expiryYear = document.getElementById("card-yyyy").value;
+      data.card.holder = document.getElementById("card-name").value;
+      data.card.cvv = document.getElementById("card-cvv").value;
+      CashFree.paySeamless(data);
+      return false;
+    };
+    payBank = function () {
+      data = generatePaymentToken()
+      var value = document.getElementById("Popup").checked
+      if (value) {
+        CashFree.initPopup();
+      }
+      data.paymentOption = "nb";
+      data.nb = {};
+      data.nb.code = document.getElementById("bank-code").value;
+
+      CashFree.paySeamless(data);
+      return false;
+    };
+    payWallet = function () {
+      data = generatePaymentToken()
+      var value = document.getElementById("Popup").checked
+      if (value) {
+        CashFree.initPopup();
+      }
+      data.paymentOption = "wallet";
+      data.wallet = {};
+      data.wallet.code = document.getElementById("wallet-code").value;
+
+      CashFree.paySeamless(data);
+      return false;
+    };
+    payUpi = function () {
+      data = generatePaymentToken()
+      var value = document.getElementById("Popup").checked
+      if (value) {
+        CashFree.initPopup();
+      }
+      data.paymentOption = "upi";
+      data.upi = {};
+      data.upi.vpa = document.getElementById("upi-vpa").value;
+
+      CashFree.paySeamless(data);
+      return false;
+    };
+  </script>
+  <h1>Payment Form</h1>
+  <div class="btn-group" data-toggle="buttons">
+    <input type="radio" name="options" id="Popup" checked> Popup
+    <input type="radio" name="options" id="Redirect"> Redirect
+  </div>
+  <table class="table table-striped" border="3" cellpadding="5" cellspacing="5">
+    <tr>
+      <th>Type</th>
+      <th>Details</th>
+      <th>Submit</th>
+    </tr>
+    <tr>
+      <td>Cards</td>
+      <td>
+        <div class="row">
+          <div class="col-lg-12">
+            <div class="input-group">
+              <span class="input-group-addon" id="basic-addon1">Name:</span>
+              <input class="form-control" type="text" id="card-name" value="test" />
+            </div>
+          </div>
+        </div>
+        <div class="row">
+          <div class="col-lg-4">
+            <div class="input-group">
+              <span class="input-group-addon" id="basic-addon1">Card Number:</span>
+              <input class="form-control" type="text" id="card-num" value="4111111111111111" />
+            </div>
+          </div>
+          <div class="col-lg-2">
+            <div class="input-group">
+              <span class="input-group-addon" id="basic-addon1">CVV:</span>
+              <input class="form-control" type="text" id="card-cvv" value="123" />
+            </div>
+          </div>
+          <div class="col-lg-3">
+            <div class="input-group">
+              <span class="input-group-addon" id="basic-addon1">MM:</span>
+              <input class="form-control" type="text" id="card-mm" value="09" />
+            </div>
+          </div>
+          <div class="col-lg-3">
+            <div class="input-group">
+              <span class="input-group-addon" id="basic-addon1">YYYY:</span>
+              <input class="form-control" type="text" id="card-yyyy" value="2018" />
+            </div>
+          </div>
+          <div class="row">
+
+          </div>
+        </div>
+      </td>
+      <td>
+        <button class="btn btn-primary" onclick="payCard()">Pay with Card</button>
+      </td>
+    </tr>
+    <tr>
+      <td>Net Banking</td>
+      <td>
+        <div class="row">
+          <div class="col-lg-6">
+            <div class="input-group">
+              SELECT BANK:
+            </div>
+          </div>
+          <div class="col-lg-6">
+            <div class="input-group">
+              <select id="bank-code" class="form-control">
+                <option value="3333">TEST Bank</option>
+                <option value="3003">Axis Bank</option>
+                <option value="3028">IndusInd Bank</option>
+                <option value="3057">Vijaya Bank</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </td>
+      <td>
+        <button onclick="payBank()" class="btn btn-success">Pay with Net Banking</button>
+      </td>
+    </tr>
+    <tr>
+      <td>Wallet</td>
+      <td>
+        <div class="row">
+          <div class="col-lg-6">
+            <div class="input-group">
+              SELECT WALLET:
+            </div>
+          </div>
+          <div class="col-lg-6">
+            <div class="input-group">
+              <select id="wallet-code" class="form-control">
+                <option value="4001">FreeCharge</option>
+                <option value="4002">MobiKwik</option>
+                <option value="4003">Ola Money</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </td>
+      <td>
+        <button class="btn btn-warning" onclick="payWallet()">Pay with Wallet</button>
+      </td>
+    </tr>
+    <tr>
+      <td>UPI</td>
+      <td>
+        <div class="input-group">
+          <span class="input-group-addon" id="basic-addon1">Your UPI VPA:</span>
+          <input class="form-control" type="text" id="upi-vpa" value="" />
+        </div>
+      </td>
+      <td>
+        <button class="btn btn-primary" onclick="payUpi()">Pay with UPI</button>
+      </td>
+    </tr>
+  </table>
+</body>
+
+</html>
