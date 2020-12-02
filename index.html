@@ -24,7 +24,6 @@
     var payBank = null;
     var payWallet = null;
     var payUpi = null;
-    var SECRET_KEY = "9ebdf33c5aabc748a3750b0879ec9efe53254e95";
     var config = {};
     config.layout = {};
     config.checkout = "transparent";
@@ -35,25 +34,41 @@
       console.log(response)
     }
     var data = {};
-    function generatePaymentToken() {
-      data.appId = '20676c22aaeaaa285cb03a657602';
+    data.appId = '20676c22aaeaaa285cb03a657602';
+    data.orderAmount = 100;
+    data.customerName = "John Doe";
+    data.customerPhone = "9900012345";
+    data.customerEmail = "jdoe@gmail.com";
+    data.returnUrl = `http://${location}:8081/finish`;
+    data.orderNote = "Extra Info";
+    data.pc = "";
+    data.orderCurrency = "INR";
+
+    async function generatePaymentToken() {
+      const { hostname: location } = window.location;
+
       data.orderId = new Date().getTime();
-      data.orderAmount = 100;
-      data.customerName = "John Doe";
-      data.customerPhone = "9900012345";
-      data.customerEmail = "jdoe@gmail.com";
-      data.returnUrl = "http://localhost:8081/finish";
-      data.orderNote = "Extra Info";
-      data.pc = "";
-      data.orderCurrency = "INR";
-      var tokenData = "appId=" + data.appId + "&orderId=" + data.orderId + "&orderAmount=" + data.orderAmount + "&customerEmail=" + data.customerEmail + "&customerPhone=" + data.customerPhone + "&orderCurrency=" + data.orderCurrency;
-      var hash = CryptoJS.HmacSHA256(tokenData, SECRET_KEY);
-      data.paymentToken = hash.toString(CryptoJS.enc.Base64);
+      const settings = {
+        method: 'POST',
+        body: JSON.stringify(data),
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+        }
+      }
+      const response = await fetch(`http://${location}:8081/generateToken/`, settings);
+      if (!response.ok) throw Error(response.message);
+      try {
+        const result = await response.json();
+        data.paymentToken = result.token
+      } catch (err) {
+        alert("The payment Token generation Failed")
+        throw err;
+      }
       return data;
     }
 
-
-    var postPaymentCallback = function (event) {
+    function postPaymentCallback(event) {
       // Callback method that handles Payment 
       if (event.name == "PAYMENT_RESPONSE" && event.response.txStatus == "SUCCESS") {
         alert("Payment Successful")
@@ -72,7 +87,7 @@
       }
     };
 
-    var pc = function () {
+    function pc() {
       // CashFree.initPopup(); This will not work because browsers block popup requests being initiated from a callback
       data.paymentOption = "card";
       data.card = {};
@@ -86,7 +101,7 @@
     }
 
     // PayCard shows how to implement it if there is a callback involved in your payment click.
-    payCardPopup = function () {
+    function payCardPopup() {
       CashFree.initPopup(); // This is required for the popup to work even in case of callback.
       $.ajax({
         url: "https://reqres.in/api/users?page=2", // This is an open endpoint.
@@ -96,9 +111,8 @@
         }
       });
     };
-
-    function payCard() {
-      data = generatePaymentToken()
+    async function payCard() {
+      data = await generatePaymentToken()
       var value = document.getElementById("Popup").checked
       if (value) {
         payCardPopup()
@@ -114,8 +128,8 @@
       CashFree.paySeamless(data);
       return false;
     };
-    payBank = function () {
-      data = generatePaymentToken()
+    async function payBank() {
+      data = await generatePaymentToken()
       var value = document.getElementById("Popup").checked
       if (value) {
         CashFree.initPopup();
@@ -127,8 +141,8 @@
       CashFree.paySeamless(data);
       return false;
     };
-    payWallet = function () {
-      data = generatePaymentToken()
+    async function payWallet() {
+      data = await generatePaymentToken()
       var value = document.getElementById("Popup").checked
       if (value) {
         CashFree.initPopup();
@@ -140,8 +154,8 @@
       CashFree.paySeamless(data);
       return false;
     };
-    payUpi = function () {
-      data = generatePaymentToken()
+    async function payUpi() {
+      data = await generatePaymentToken()
       var value = document.getElementById("Popup").checked
       if (value) {
         CashFree.initPopup();
@@ -153,6 +167,7 @@
       CashFree.paySeamless(data);
       return false;
     };
+
   </script>
   <h1>Payment Form</h1>
   <div class="btn-group" data-toggle="buttons">
