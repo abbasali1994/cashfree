@@ -1,0 +1,54 @@
+{
+  "name": "cashfree",
+  "version": "1.0.0",
+  "description": "",
+  "main": "app.js",
+  "dependencies": {
+    "@babel/cli": "^7.12.8",
+    "@babel/core": "^7.12.9",
+    "@babel/preset-env": "^7.12.7",
+    "babel-polyfill": "^6.26.0",
+    "babel-preset-env": "^1.7.0",
+    "crypto-js": "^4.0.0",
+    "ejs": "^3.1.5",
+    "express": "^4.17.1",
+    "nodemon": "^2.0.6",
+    "npm-run-all": "^4.1.5",
+    "rimraf": "^3.0.2"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "start": "npm run dev",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "server": "node ./app",
+    "transpile": "babel ./app.js --out-dir dist-server",
+    "dev": "NODE_ENV=development npm-run-all build server",
+    "clean": "rimraf dist-server",
+    "build": "npm-run-all clean transpile",
+    "watch:dev": "nodemon"
+  },
+  "babel": {
+    "presets": [
+      "@babel/preset-env"
+    ]
+  },
+  "nodemonConfig": {
+    "exec": "npm run dev",
+    "watch": [
+      "server/*",
+      "views/*",
+      "constants/*"
+    ]
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/abbasali1994/cashfree.git"
+  },
+  "author": "Abbas Ali",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/abbasali1994/cashfree/issues"
+  },
+  "homepage": "https://github.com/abbasali1994/cashfree#readme",
+  "type": "module"
+}
