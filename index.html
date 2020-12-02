@@ -21,9 +21,6 @@
 
 <body class="container">
   <script type="text/javascript">
-    var payBank = null;
-    var payWallet = null;
-    var payUpi = null;
     var config = {};
     config.layout = {};
     config.checkout = "transparent";
@@ -33,20 +30,20 @@
     if (response.status != "OK") {
       console.log(response)
     }
+
     var data = {};
     data.appId = '20676c22aaeaaa285cb03a657602';
     data.orderAmount = 100;
     data.customerName = "John Doe";
     data.customerPhone = "9900012345";
     data.customerEmail = "jdoe@gmail.com";
-    data.returnUrl = `http://${location}:8081/finish`;
+    data.returnUrl = `http://localhost:8081/finish`;
     data.orderNote = "Extra Info";
     data.pc = "";
     data.orderCurrency = "INR";
 
     async function generatePaymentToken() {
       const { hostname: location } = window.location;
-
       data.orderId = new Date().getTime();
       const settings = {
         method: 'POST',
